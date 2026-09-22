@@ -30,7 +30,7 @@ library(GausSKAT)
 
 configuration <- gausskat_simulation_config(
   sample_size = 1000L,
-  region_length = 200L,
+  number_snps = 200L,
   causal_percent = 50,
   causal_maf_cutoff = 0.01,
   negative_percent = 0,

@@ -12,3 +12,5 @@
   SKAT score calculation used in the manuscript simulations.
 - Added a live simulation progress bar reporting percentage, elapsed time,
   and estimated completion time.
+- Defined simulation size by the exact number of consecutive SNPs sampled in
+  each replication, matching `SNP_Max` in `revision3W_simulation.R`.

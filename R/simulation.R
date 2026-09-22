@@ -1,5 +1,5 @@
 # The stochastic call order and sampling scheme follow revision3W_simulation.R,
-# the final manuscript simulation script. The region, haplotype, and
+# the final manuscript simulation script. The SNP, haplotype, and
 # causal-variant framework originates from the SKAT power code (GPL >= 2).
 
 .validate_probability <- function(x, name, upper_inclusive = TRUE) {
@@ -13,7 +13,8 @@
 #' Define a GausSKAT simulation configuration
 #'
 #' @param sample_size Number of diploid individuals.
-#' @param region_length Number of consecutive variants in a sampled region.
+#' @param number_snps Exact number of consecutive SNPs sampled in each
+#'   replication.
 #' @param causal_percent Percentage of variants below `causal_maf_cutoff` that
 #'   are causal.
 #' @param causal_maf_cutoff Upper MAF cutoff for candidate causal variants.
@@ -33,7 +34,7 @@
 #' @export
 gausskat_simulation_config <- function(
     sample_size = 1000L,
-    region_length = 200L,
+    number_snps = 200L,
     causal_percent = 50,
     causal_maf_cutoff = 0.01,
     negative_percent = 0,
@@ -46,16 +47,16 @@ gausskat_simulation_config <- function(
     residual_sd = 1,
     haplotype_sampling = c("manuscript", "full_pool")) {
   sample_size <- as.integer(sample_size)
-  region_length <- as.integer(region_length)
+  number_snps <- as.integer(number_snps)
   number_grid_points <- as.integer(number_grid_points)
   haplotype_sampling <- match.arg(haplotype_sampling)
 
   if (length(sample_size) != 1L || is.na(sample_size) || sample_size < 2L) {
     stop("sample_size must be an integer of at least two.", call. = FALSE)
   }
-  if (length(region_length) != 1L || is.na(region_length) ||
-      region_length < 1L) {
-    stop("region_length must be a positive integer.", call. = FALSE)
+  if (length(number_snps) != 1L || is.na(number_snps) ||
+      number_snps < 1L) {
+    stop("number_snps must be a positive integer.", call. = FALSE)
   }
   if (length(causal_percent) != 1L || !is.finite(causal_percent) ||
       causal_percent <= 0 || causal_percent > 100) {
@@ -106,7 +107,7 @@ gausskat_simulation_config <- function(
   structure(
     list(
       sample_size = sample_size,
-      region_length = region_length,
+      number_snps = number_snps,
       causal_percent = causal_percent,
       causal_maf_cutoff = causal_maf_cutoff,
       negative_percent = negative_percent,
@@ -155,18 +156,25 @@ gausskat_simulation_config <- function(
   list(haplotypes = haplotypes[, keep, drop = FALSE], maf = maf[keep])
 }
 
-.sample_region <- function(number_variants, region_length) {
-  if (region_length >= number_variants) {
+.sample_snps <- function(number_variants, number_snps) {
+  if (number_snps >= number_variants) {
     return(seq_len(number_variants))
   }
 
-  # Matches Get_RandomRegion() in the SKAT power-simulation code when variant
-  # positions are represented by consecutive integers.
-  region_start <- stats::runif(1) *
-    ((number_variants - 1) - region_length) + 1
-  region_end <- region_start + region_length
-  which(seq_len(number_variants) >= region_start &
-          seq_len(number_variants) <= region_end)
+  # revision3W_simulation.R sets SNP.dist <- seq_len(number_variants) before
+  # calling Get_RandomRegion(). With consecutive integer positions, this draw
+  # returns exactly number_snps consecutive SNPs (apart from probability-zero
+  # integer boundary draws) while preserving the manuscript RNG sequence.
+  snp_start <- stats::runif(1) *
+    ((number_variants - 1) - number_snps) + 1
+  snp_end <- snp_start + number_snps
+  selected <- which(seq_len(number_variants) >= snp_start &
+                      seq_len(number_variants) <= snp_end)
+  if (length(selected) != number_snps) {
+    stop("The SNP sampler did not return the requested number of SNPs.",
+         call. = FALSE)
+  }
+  selected
 }
 
 .simulate_one_replication <- function(configuration, haplotypes, haplotype_maf,
@@ -175,7 +183,7 @@ gausskat_simulation_config <- function(
   n <- configuration$sample_size
   X1 <- stats::rnorm(n)
   X2 <- stats::rbinom(n, size = 1L, prob = 0.5)
-  region <- .sample_region(ncol(haplotypes), configuration$region_length)
+  snps <- .sample_snps(ncol(haplotypes), configuration$number_snps)
 
   if (configuration$haplotype_sampling == "manuscript") {
     if (n > nrow(haplotypes)) {
@@ -199,9 +207,9 @@ gausskat_simulation_config <- function(
     n,
     replace = replace_haplotypes
   )
-  Z <- haplotypes[haplotype_1, region, drop = FALSE] +
-    haplotypes[haplotype_2, region, drop = FALSE]
-  region_maf <- haplotype_maf[region]
+  Z <- haplotypes[haplotype_1, snps, drop = FALSE] +
+    haplotypes[haplotype_2, snps, drop = FALSE]
+  region_maf <- haplotype_maf[snps]
 
   eligible <- which(region_maf < configuration$causal_maf_cutoff)
   if (length(eligible) == 0L) {
@@ -443,8 +451,8 @@ simulate_gausskat_power <- function(
     haplotypes <- .load_skat_haplotypes()$Haplotype
   }
   prepared <- .prepare_haplotypes(haplotypes)
-  if (configuration$region_length > ncol(prepared$haplotypes)) {
-    stop("region_length exceeds the available polymorphic variants.",
+  if (configuration$number_snps > ncol(prepared$haplotypes)) {
+    stop("number_snps exceeds the available polymorphic variants.",
          call. = FALSE)
   }
 

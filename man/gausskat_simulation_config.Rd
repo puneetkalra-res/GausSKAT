@@ -4,7 +4,7 @@
 \usage{
 gausskat_simulation_config(
   sample_size = 1000L,
-  region_length = 200L,
+  number_snps = 200L,
   causal_percent = 50,
   causal_maf_cutoff = 0.01,
   negative_percent = 0,
@@ -20,7 +20,8 @@ gausskat_simulation_config(
 }
 \arguments{
   \item{sample_size}{Number of diploid individuals.}
-  \item{region_length}{Number of consecutive variants per region.}
+  \item{number_snps}{Exact number of consecutive SNPs sampled in each
+  replication.}
   \item{causal_percent}{Percentage of eligible variants that are causal.}
   \item{causal_maf_cutoff}{Upper MAF cutoff for candidate causal variants.}
   \item{negative_percent}{Percentage of causal effects with negative signs.}

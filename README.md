@@ -94,7 +94,7 @@ null-model covariate design; it does not use the phenotype values.
 ```r
 configuration <- gausskat_simulation_config(
   sample_size = 1000,
-  region_length = 200,
+  number_snps = 200,
   causal_percent = 50,
   causal_maf_cutoff = 0.01,
   negative_percent = 0,

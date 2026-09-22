@@ -1,9 +1,17 @@
+test_that("the SNP sampler returns the requested consecutive SNP count", {
+  set.seed(7761)
+  selected <- GausSKAT:::.sample_snps(100L, 40L)
+
+  expect_length(selected, 40L)
+  expect_equal(diff(selected), rep(1, 39L))
+})
+
 test_that("the simulation interface returns auditable replicate-level output", {
   skip_on_cran()
   skip_if_not_installed("SKAT")
   configuration <- gausskat_simulation_config(
     sample_size = 40L,
-    region_length = 12L,
+    number_snps = 12L,
     causal_percent = 25,
     causal_maf_cutoff = 0.5,
     negative_percent = 20,
