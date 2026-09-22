@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use GausSKAT, please cite the accompanying manuscript."
+title: "GausSKAT: Data-Adaptive Weighted Gaussian-Kernel SKAT"
+type: software
+authors:
+  - family-names: Kalra
+    given-names: Puneet
+  - family-names: Sharma
+    given-names: Suresh Kumar
+version: 0.1.0
+date-released: 2026-09-22
+license: GPL-2.0-or-later
+repository-code: "https://github.com/puneetkalra-res/GausSKAT"

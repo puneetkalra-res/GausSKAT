@@ -1,0 +1,12 @@
+^\.github$
+^\.gitignore$
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.md$
+^CITATION\.cff$
+^LICENSE\.md$
+^CODE_PROVENANCE\.md$
+^PUBLISHING\.md$
+^scripts$
+^data-private$
+^results$
