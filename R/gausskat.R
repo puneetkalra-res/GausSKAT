@@ -14,6 +14,131 @@
   fit
 }
 
+.resolve_component_parallelism <- function(parallel, n_cores,
+                                           number_tasks) {
+  if (length(parallel) != 1L || is.na(parallel) || !is.logical(parallel)) {
+    stop("parallel must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  number_tasks <- as.integer(number_tasks)
+  if (length(number_tasks) != 1L || is.na(number_tasks) ||
+      number_tasks < 1L) {
+    stop("number_tasks must be a positive integer.", call. = FALSE)
+  }
+
+  if (is.null(n_cores)) {
+    detected <- parallel::detectCores(logical = TRUE)
+    if (is.na(detected)) {
+      detected <- 1L
+    }
+    n_cores <- max(1L, detected - 1L)
+  } else {
+    n_cores <- as.integer(n_cores)
+    if (length(n_cores) != 1L || is.na(n_cores) || n_cores < 1L) {
+      stop("n_cores must be NULL or a positive integer.", call. = FALSE)
+    }
+  }
+
+  workers <- if (isTRUE(parallel)) {
+    min(n_cores, number_tasks)
+  } else {
+    1L
+  }
+  backend <- if (workers == 1L) {
+    "sequential"
+  } else if (.Platform$OS.type == "windows") {
+    "PSOCK"
+  } else {
+    "fork"
+  }
+
+  list(workers = workers, backend = backend)
+}
+
+.make_psock_cluster <- function(n_cores) {
+  seed_exists <- exists(".Random.seed", envir = .GlobalEnv,
+                        inherits = FALSE)
+  if (seed_exists) {
+    seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+  }
+  on.exit({
+    if (seed_exists) {
+      assign(".Random.seed", seed, envir = .GlobalEnv)
+    } else if (exists(".Random.seed", envir = .GlobalEnv,
+                      inherits = FALSE)) {
+      rm(".Random.seed", envir = .GlobalEnv)
+    }
+  }, add = TRUE)
+
+  parallel::makeCluster(n_cores, type = "PSOCK", useXDR = FALSE)
+}
+
+.evaluate_component_fits <- function(ell_grid, D, Z, null_model, method,
+                                     parallel_plan,
+                                     worker_cluster = NULL) {
+  evaluate_one <- function(ell) {
+    .skat_matrix_kernel(
+      Z = Z,
+      null_model = null_model,
+      K = exp(-D / ell),
+      method = method
+    )
+  }
+
+  if (parallel_plan$backend == "sequential") {
+    return(lapply(ell_grid, evaluate_one))
+  }
+
+  if (parallel_plan$backend == "fork") {
+    return(parallel::mclapply(
+      ell_grid,
+      evaluate_one,
+      mc.cores = parallel_plan$workers,
+      mc.preschedule = TRUE,
+      mc.set.seed = FALSE
+    ))
+  }
+
+  cluster_created_here <- is.null(worker_cluster)
+  if (cluster_created_here) {
+    worker_cluster <- .make_psock_cluster(parallel_plan$workers)
+    on.exit(parallel::stopCluster(worker_cluster), add = TRUE)
+  }
+
+  parallel::clusterExport(
+    worker_cluster,
+    varlist = c("D", "Z", "null_model", "method"),
+    envir = environment()
+  )
+
+  worker_function <- function(ell) {
+    K <- exp(-D / ell)
+    fit <- SKAT::SKAT(
+      Z = Z,
+      obj = null_model,
+      kernel = K,
+      method = method,
+      weights = rep(1, ncol(Z)),
+      max_maf = 1
+    )
+    if (length(fit$p.value) != 1L || !is.finite(fit$p.value)) {
+      stop("SKAT did not return a finite component p-value.",
+           call. = FALSE)
+    }
+    fit
+  }
+  # The required matrices are already present in each worker's global
+  # environment. Avoid serializing the enclosing function environment, which
+  # would otherwise transmit the same large objects a second time.
+  environment(worker_function) <- .GlobalEnv
+
+  unname(parallel::parLapplyLB(
+    worker_cluster,
+    ell_grid,
+    worker_function
+  ))
+}
+
 #' GausSKAT test for a continuous trait
 #'
 #' Constructs a phenotype-independent, data-adaptive grid of weighted Gaussian
@@ -44,6 +169,11 @@
 #'   grid point.
 #' @param warn_on_endpoint Whether to warn when the observed doubling change at
 #'   the approximate upper endpoint exceeds `epsilon`.
+#' @param parallel Whether to evaluate the component Gaussian-kernel tests in
+#'   parallel. The default is `FALSE`.
+#' @param n_cores Number of component-test workers when `parallel = TRUE`.
+#'   When `NULL`, at most one fewer than the detected logical cores is used,
+#'   capped by the number of grid points.
 #' @return An object of class `GausSKAT` containing the aggregated p-value,
 #'   component p-values, adaptive grid, and endpoint diagnostics.
 #' @export
@@ -51,8 +181,31 @@ GausSKAT <- function(Z, null_model, X = NULL, weights = NULL,
                      weights_beta = c(1, 25), epsilon = 0.05,
                      number_grid_points = 5L, method = "davies",
                      acat_weights = NULL, keep_component_fits = FALSE,
-                     warn_on_endpoint = TRUE) {
-  call <- match.call()
+                     warn_on_endpoint = TRUE, parallel = FALSE,
+                     n_cores = NULL) {
+  .gausskat_impl(
+    Z = Z,
+    null_model = null_model,
+    X = X,
+    weights = weights,
+    weights_beta = weights_beta,
+    epsilon = epsilon,
+    number_grid_points = number_grid_points,
+    method = method,
+    acat_weights = acat_weights,
+    keep_component_fits = keep_component_fits,
+    warn_on_endpoint = warn_on_endpoint,
+    parallel = parallel,
+    n_cores = n_cores,
+    worker_cluster = NULL,
+    call = match.call()
+  )
+}
+
+.gausskat_impl <- function(Z, null_model, X, weights, weights_beta, epsilon,
+                           number_grid_points, method, acat_weights,
+                           keep_component_fits, warn_on_endpoint, parallel,
+                           n_cores, worker_cluster, call) {
   Z <- .validate_genotypes(Z)
 
   if (!inherits(null_model, "SKAT_NULL_Model")) {
@@ -66,6 +219,12 @@ GausSKAT <- function(Z, null_model, X = NULL, weights = NULL,
   if (!method %in% c("davies", "liu", "liu.mod")) {
     stop("method must be 'davies', 'liu', or 'liu.mod'.", call. = FALSE)
   }
+
+  parallel_plan <- .resolve_component_parallelism(
+    parallel = parallel,
+    n_cores = n_cores,
+    number_tasks = number_grid_points
+  )
 
   included_rows <- .included_rows(Z, null_model)
   Z_analysis <- Z[included_rows, , drop = FALSE]
@@ -110,14 +269,15 @@ GausSKAT <- function(Z, null_model, X = NULL, weights = NULL,
     )
   }
 
-  component_fits <- lapply(grid$ell_grid, function(ell) {
-    .skat_matrix_kernel(
-      Z = Z,
-      null_model = null_model,
-      K = gausskat_kernel(D, ell),
-      method = method
-    )
-  })
+  component_fits <- .evaluate_component_fits(
+    ell_grid = grid$ell_grid,
+    D = D,
+    Z = Z,
+    null_model = null_model,
+    method = method,
+    parallel_plan = parallel_plan,
+    worker_cluster = worker_cluster
+  )
   component_p_values <- vapply(
     component_fits,
     function(fit) as.numeric(fit$p.value),
@@ -139,6 +299,9 @@ GausSKAT <- function(Z, null_model, X = NULL, weights = NULL,
     maf = maf,
     method = method,
     number.grid.points = number_grid_points,
+    parallel = parallel_plan$workers > 1L,
+    n.cores = parallel_plan$workers,
+    parallel.backend = parallel_plan$backend,
     rank.X = grid$rank_X,
     call = call
   )
@@ -163,5 +326,8 @@ print.GausSKAT <- function(x, ...) {
       "\n", sep = "")
   cat("  Change at ell_max:  ", format(x$delta.at.ell.max, digits = 5),
       "\n", sep = "")
+  cat("  Component backend:  ", x$parallel.backend,
+      " (", x$n.cores, " worker", if (x$n.cores == 1L) "" else "s", ")\n",
+      sep = "")
   invisible(x)
 }

@@ -24,6 +24,41 @@ test_that("GausSKAT returns a complete five-component result", {
   expect_true(all(is.finite(fit$component.p.values)))
   expect_gte(fit$p.value, 0)
   expect_lte(fit$p.value, 1)
+
+  parallel_fit <- GausSKAT(
+    Z,
+    null_model,
+    number_grid_points = 5L,
+    warn_on_endpoint = FALSE,
+    parallel = TRUE,
+    n_cores = 2L
+  )
+
+  expect_true(parallel_fit$parallel)
+  expect_equal(parallel_fit$n.cores, 2L)
+  expect_equal(parallel_fit$ell.grid, fit$ell.grid, tolerance = 0)
+  expect_equal(
+    parallel_fit$component.p.values,
+    fit$component.p.values,
+    tolerance = 1e-12
+  )
+  expect_equal(parallel_fit$p.value, fit$p.value, tolerance = 1e-12)
+
+  D <- weighted_squared_distances(Z, fit$weights)
+  psock_fits <- GausSKAT:::.evaluate_component_fits(
+    ell_grid = fit$ell.grid,
+    D = D,
+    Z = Z,
+    null_model = null_model,
+    method = "davies",
+    parallel_plan = list(workers = 2L, backend = "PSOCK")
+  )
+  psock_p_values <- vapply(
+    psock_fits,
+    function(component_fit) component_fit$p.value,
+    numeric(1)
+  )
+  expect_equal(psock_p_values, fit$component.p.values, tolerance = 1e-12)
 })
 
 test_that("binary null models are rejected explicitly", {

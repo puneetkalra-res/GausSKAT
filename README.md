@@ -74,7 +74,9 @@ fit <- GausSKAT(
   Z = SKAT.example$Z,
   null_model = null_model,
   epsilon = 0.05,
-  number_grid_points = 5
+  number_grid_points = 5,
+  parallel = TRUE,
+  n_cores = 5
 )
 
 fit
@@ -105,6 +107,8 @@ simulation <- simulate_gausskat_power(
   configuration = configuration,
   n_replications = 100,
   seed = 7761,
+  parallel = TRUE,
+  n_cores = 5,
   progress = TRUE
 )
 
@@ -132,6 +136,10 @@ command-line example.
   `Rejection`, matching `revision3W_simulation.R` when run in a fresh R session.
   The seed, RNG settings, and `sessionInfo()` are recorded, and the caller's
   pre-existing random-number state is restored on exit.
+- Optional component-level parallelism uses forked workers on macOS/Linux and
+  a persistent PSOCK cluster on Windows. Simulation replications remain
+  sequential, and only deterministic kernel tests are parallelised, so the
+  seeded simulation sequence is unchanged.
 - The default `haplotype_sampling = "manuscript"` reproduces the sampling
   scheme in the research scripts. The alternative `"full_pool"` scheme is
   available for new experiments and is recorded in the configuration.

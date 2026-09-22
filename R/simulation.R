@@ -170,7 +170,8 @@ gausskat_simulation_config <- function(
 }
 
 .simulate_one_replication <- function(configuration, haplotypes, haplotype_maf,
-                                      comparison_kernels, method) {
+                                      comparison_kernels, method, parallel,
+                                      n_cores, worker_cluster) {
   n <- configuration$sample_size
   X1 <- stats::rnorm(n)
   X2 <- stats::rbinom(n, size = 1L, prob = 0.5)
@@ -240,15 +241,22 @@ gausskat_simulation_config <- function(
   maf <- colMeans(Z) / 2
   weights <- .beta_weights(maf, configuration$weights_beta)
 
-  gausskat_fit <- GausSKAT(
+  gausskat_fit <- .gausskat_impl(
     Z = Z,
     null_model = null_model,
     X = X,
     weights = weights,
+    weights_beta = configuration$weights_beta,
     epsilon = configuration$epsilon,
     number_grid_points = configuration$number_grid_points,
     method = method,
-    warn_on_endpoint = FALSE
+    acat_weights = NULL,
+    keep_component_fits = FALSE,
+    warn_on_endpoint = FALSE,
+    parallel = parallel,
+    n_cores = n_cores,
+    worker_cluster = worker_cluster,
+    call = NULL
   )
 
   comparison_p_values <- vapply(comparison_kernels, function(kernel) {
@@ -390,6 +398,12 @@ gausskat_simulation_config <- function(
 #' @param method SKAT p-value method.
 #' @param progress Whether to print progress updates.
 #' @param fail_fast Whether the first failed replication should stop the run.
+#' @param parallel Whether to evaluate the component Gaussian-kernel tests in
+#'   parallel within each replication. Replications themselves remain
+#'   sequential so the seeded simulation sequence is unchanged.
+#' @param n_cores Number of component-test workers when `parallel = TRUE`.
+#'   When `NULL`, at most one fewer than the detected logical cores is used,
+#'   capped by the number of grid points.
 #' @return An object of class `GausSKAT_simulation`.
 #' @export
 simulate_gausskat_power <- function(
@@ -400,7 +414,9 @@ simulate_gausskat_power <- function(
     comparison_kernels = c("linear.weighted", "IBS.weighted"),
     method = "davies",
     progress = interactive(),
-    fail_fast = TRUE) {
+    fail_fast = TRUE,
+    parallel = FALSE,
+    n_cores = NULL) {
   if (!inherits(configuration, "GausSKAT_simulation_config")) {
     stop("configuration must be returned by gausskat_simulation_config().",
          call. = FALSE)
@@ -458,6 +474,17 @@ simulate_gausskat_power <- function(
   set.seed(seed)
   manuscript_rng_kind <- RNGkind()
 
+  parallel_plan <- .resolve_component_parallelism(
+    parallel = parallel,
+    n_cores = n_cores,
+    number_tasks = configuration$number_grid_points
+  )
+  worker_cluster <- NULL
+  if (parallel_plan$backend == "PSOCK") {
+    worker_cluster <- .make_psock_cluster(parallel_plan$workers)
+    on.exit(parallel::stopCluster(worker_cluster), add = TRUE)
+  }
+
   runs <- vector("list", n_replications)
   for (replication in seq_len(n_replications)) {
     runs[[replication]] <- tryCatch(
@@ -467,7 +494,10 @@ simulate_gausskat_power <- function(
           haplotypes = prepared$haplotypes,
           haplotype_maf = prepared$maf,
           comparison_kernels = comparison_kernels,
-          method = method
+          method = method,
+          parallel = parallel_plan$workers > 1L,
+          n_cores = parallel_plan$workers,
+          worker_cluster = worker_cluster
         )
         value$success <- TRUE
         value$error <- NA_character_
@@ -537,6 +567,9 @@ simulate_gausskat_power <- function(
     seed = seed,
     comparison_kernels = comparison_kernels,
     method = method,
+    parallel = parallel_plan$workers > 1L,
+    n_cores = parallel_plan$workers,
+    parallel_backend = parallel_plan$backend,
     rng_kind = manuscript_rng_kind,
     results = results,
     summary = .simulation_summaries(
@@ -556,6 +589,9 @@ print.GausSKAT_simulation <- function(x, ...) {
   cat("  Replications: ", x$n_replications, "\n", sep = "")
   cat("  Seed:         ", x$seed, "\n", sep = "")
   cat("  Failures:     ", x$summary$failure_count, "\n", sep = "")
+  cat("  Components:   ", x$parallel_backend,
+      " (", x$n_cores, " worker", if (x$n_cores == 1L) "" else "s", ")\n",
+      sep = "")
   print(x$summary$p_values, row.names = FALSE)
   invisible(x)
 }

@@ -14,7 +14,9 @@ fit <- GausSKAT(
   Z = SKAT.example$Z,
   null_model = null_model,
   epsilon = 0.05,
-  number_grid_points = 5L
+  number_grid_points = 5L,
+  parallel = TRUE,
+  n_cores = 5L
 )
 
 print(fit)

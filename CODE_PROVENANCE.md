@@ -31,3 +31,9 @@ final full-simulation script: a fresh-session Mersenne--Twister stream is seeded
 once and used continuously across replications. The normal and sampling
 generators are fixed explicitly as `Inversion` and `Rejection` so that prior
 session settings cannot silently change the sequence.
+
+Optional parallel execution is restricted to the deterministic Gaussian-kernel
+component tests within each replication. Simulation replications retain their
+original sequential order. The implementation uses forked workers on
+macOS/Linux and a persistent PSOCK cluster on Windows, without advancing the
+master random-number stream.

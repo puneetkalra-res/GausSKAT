@@ -20,6 +20,7 @@ Encoding: UTF-8
 Depends:
     R (>= 4.1.0)
 Imports:
+    parallel,
     SKAT (>= 2.2.5),
     stats,
     utils

@@ -11,7 +11,9 @@ simulate_gausskat_power(
   comparison_kernels = c("linear.weighted", "IBS.weighted"),
   method = "davies",
   progress = interactive(),
-  fail_fast = TRUE
+  fail_fast = TRUE,
+  parallel = FALSE,
+  n_cores = NULL
 )
 
 \method{print}{GausSKAT_simulation}(x, ...)
@@ -27,6 +29,12 @@ simulate_gausskat_power(
   \item{method}{SKAT p-value method.}
   \item{progress}{Whether to print progress updates.}
   \item{fail_fast}{Whether the first failed replication stops the run.}
+  \item{parallel}{Whether to evaluate the component Gaussian-kernel tests in
+  parallel within each replication. Replications remain sequential so the
+  seeded simulation sequence is unchanged.}
+  \item{n_cores}{Number of component-test workers when \code{parallel = TRUE}.
+  When \code{NULL}, at most one fewer than the detected logical cores is used,
+  capped by the number of grid points.}
   \item{x}{A \code{GausSKAT_simulation} object.}
   \item{...}{Additional arguments reserved for print methods.}
 }

@@ -28,7 +28,12 @@ null_model <- SKAT_Null_Model(
   out_type = "C"
 )
 
-fit <- GausSKAT(SKAT.example$Z, null_model)
+fit <- GausSKAT(
+  SKAT.example$Z,
+  null_model,
+  parallel = TRUE,
+  n_cores = 5L
+)
 fit$p.value
 fit$component.p.values
 fit$ell.grid
@@ -37,3 +42,5 @@ fit$delta.at.ell.max
 
 The package passes the constructed kernel matrices to the official `SKAT`
 package. It does not alter SKAT's null-model fitting or p-value calculations.
+Component tests can be evaluated sequentially or in parallel. Parallel runs
+use forked workers on macOS/Linux and PSOCK workers on Windows.

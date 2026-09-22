@@ -15,7 +15,9 @@ GausSKAT(
   method = "davies",
   acat_weights = NULL,
   keep_component_fits = FALSE,
-  warn_on_endpoint = TRUE
+  warn_on_endpoint = TRUE,
+  parallel = FALSE,
+  n_cores = NULL
 )
 
 \method{print}{GausSKAT}(x, ...)
@@ -38,6 +40,11 @@ GausSKAT(
   \item{keep_component_fits}{Whether to retain the complete component fits.}
   \item{warn_on_endpoint}{Whether to warn when the observed change at the
   approximate upper endpoint exceeds \code{epsilon}.}
+  \item{parallel}{Whether to evaluate the component Gaussian-kernel tests in
+  parallel. The default is \code{FALSE}.}
+  \item{n_cores}{Number of component-test workers when \code{parallel = TRUE}.
+  When \code{NULL}, at most one fewer than the detected logical cores is used,
+  capped by the number of grid points.}
   \item{x}{A fitted \code{GausSKAT} object.}
   \item{...}{Additional arguments reserved for print methods.}
 }
