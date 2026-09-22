@@ -10,10 +10,10 @@ test_that("distance and kernel match the original weighted formula", {
   reference_D <- as.matrix(stats::dist(weighted_Z))^2
 
   D <- weighted_squared_distances(Z, weights)
-  expect_equal(D, reference_D, tolerance = 1e-12)
+  expect_equal(unname(D), unname(reference_D), tolerance = 1e-12)
   expect_equal(
-    gausskat_kernel(D, 100),
-    exp(-reference_D / 100),
+    unname(gausskat_kernel(D, 100)),
+    unname(exp(-reference_D / 100)),
     tolerance = 1e-12
   )
 })
