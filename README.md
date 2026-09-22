@@ -133,10 +133,10 @@ command-line example.
   \(O(n^2)\) memory use.
 - The first-order upper endpoint is labelled `ell.max.approx` throughout the
   code and output. Its observed doubling-change diagnostic is also returned.
-- Simulation runs explicitly use `Mersenne-Twister`, `Inversion`, and
-  `Rejection`, matching `revision3W_simulation.R` when run in a fresh R session.
-  The seed, RNG settings, and `sessionInfo()` are recorded, and the caller's
-  pre-existing random-number state is restored on exit.
+- Simulation runs retain the active RNG kinds and then call `set.seed()`,
+  matching `revision3W_simulation.R`. The seed, RNG settings, and
+  `sessionInfo()` are recorded, and the caller's pre-existing random-number
+  state is restored on exit.
 - Optional component-level parallelism uses forked workers on macOS/Linux and
   a persistent PSOCK cluster on Windows. Simulation replications remain
   sequential, and only deterministic kernel tests are parallelised, so the

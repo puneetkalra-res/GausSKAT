@@ -14,3 +14,7 @@
   and estimated completion time.
 - Defined simulation size by the exact number of consecutive SNPs sampled in
   each replication, matching `SNP_Max` in `revision3W_simulation.R`.
+- Matched the final simulation script's RNG behavior by retaining the active
+  RNG kinds when applying the requested seed.
+- Reported the average number of causal variants as an immediate replication-
+  stream diagnostic against `revision3W_simulation.R`.

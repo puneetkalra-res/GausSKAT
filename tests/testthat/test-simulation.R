@@ -37,10 +37,15 @@ test_that("the simulation interface returns auditable replicate-level output", {
 
   expect_s3_class(result, "GausSKAT_simulation")
   expect_equal(result$seed, 99L)
+  expect_identical(result$rng_kind, RNGkind())
   expect_equal(nrow(result$results), 1L)
   expect_true(result$results$success)
   expect_true(all(c("p_gausskat", "p_grid_1", "ell_grid_1") %in%
                     names(result$results)))
+  expect_equal(
+    result$summary$average_number_causal,
+    mean(result$results$number_causal)
+  )
   expect_identical(.Random.seed, rng_before)
 
   parallel_result <- simulate_gausskat_power(

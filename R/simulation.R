@@ -383,6 +383,7 @@ gausskat_simulation_config <- function(
     grid = grid_summary,
     endpoints = endpoint_summary,
     highest_power_grid_positions = best_grid,
+    average_number_causal = mean(results$number_causal, na.rm = TRUE),
     failure_count = sum(!results$success),
     degenerate_grid_count = sum(results$grid_degenerate, na.rm = TRUE)
   )
@@ -471,15 +472,9 @@ simulate_gausskat_power <- function(
     }
   }, add = TRUE)
 
-  # revision3W_simulation.R calls set.seed() without first changing RNGkind().
-  # These are the defaults in a fresh R >= 3.6 session and are stated
-  # explicitly here to make the manuscript RNG sequence independent of the
-  # caller's prior session state.
-  RNGkind(
-    kind = "Mersenne-Twister",
-    normal.kind = "Inversion",
-    sample.kind = "Rejection"
-  )
+  # Match revision3W_simulation.R exactly: retain the active RNG kinds and
+  # seed the current stream. The kinds are recorded in the returned object,
+  # and the caller's complete RNG state is restored on exit.
   set.seed(seed)
   manuscript_rng_kind <- RNGkind()
 
@@ -614,5 +609,8 @@ print.GausSKAT_simulation <- function(x, ...) {
       " (", x$n_cores, " worker", if (x$n_cores == 1L) "" else "s", ")\n",
       sep = "")
   print(x$summary$p_values, row.names = FALSE)
+  cat("  Average number of causal variants: ",
+      format(x$summary$average_number_causal, digits = 7L), "\n",
+      sep = "")
   invisible(x)
 }

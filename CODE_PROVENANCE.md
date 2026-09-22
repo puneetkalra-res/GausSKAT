@@ -32,10 +32,9 @@ large-hyperparameter weighted-linear limit, ACAT, and the simulation output
 structure.
 
 The default simulation RNG sequence follows `revision3W_simulation.R`, the
-final full-simulation script: a fresh-session Mersenne--Twister stream is seeded
-once and used continuously across replications. The normal and sampling
-generators are fixed explicitly as `Inversion` and `Rejection` so that prior
-session settings cannot silently change the sequence.
+final full-simulation script: the active RNG kinds are retained and the stream
+is seeded once and used continuously across replications. The active RNG kinds
+are recorded with every returned simulation object.
 
 Optional parallel execution is restricted to the deterministic Gaussian-kernel
 component tests within each replication. Simulation replications retain their
