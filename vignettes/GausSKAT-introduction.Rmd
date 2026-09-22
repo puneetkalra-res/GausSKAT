@@ -40,7 +40,8 @@ fit$ell.grid
 fit$delta.at.ell.max
 ```
 
-The package passes the constructed kernel matrices to the official `SKAT`
-package. It does not alter SKAT's null-model fitting or p-value calculations.
+The package uses the weighted-Gaussian extension of the continuous-trait SKAT
+score calculation used in the manuscript simulations. It continues to use
+SKAT's null-model objects and established mixture-distribution calculations.
 Component tests can be evaluated sequentially or in parallel. Parallel runs
 use forked workers on macOS/Linux and PSOCK workers on Windows.

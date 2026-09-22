@@ -6,11 +6,12 @@ phenotype-independent grid of weighted Gaussian kernels, obtains one SKAT
 p-value per kernel, and combines the dependent p-values using the aggregated
 Cauchy association test (ACAT).
 
-This repository is an independent implementation of the method. It uses the
-official [`SKAT`](https://cran.r-project.org/package=SKAT) package as a
-dependency and passes each weighted Gaussian kernel through SKAT's existing
-matrix-kernel interface. It does **not** redistribute or require a modified
-copy of the SKAT source code.
+This repository implements the weighted-Gaussian extension of the
+continuous-trait SKAT calculation used for the manuscript simulations. It
+retains only the required modified pathway and uses the official
+[`SKAT`](https://cran.r-project.org/package=SKAT) package for null-model fitting
+and mixture-distribution calculations; it does not redistribute the full SKAT
+source tree.
 
 ## Method implemented
 
@@ -153,16 +154,17 @@ command-line example.
 - `scripts/`: executable analysis and reproducibility examples.
 - `vignettes/`: a concise method walkthrough.
 - `.github/workflows/`: automated package checks.
-- `CODE_PROVENANCE.md`: separation of the final implementation from the
-  exploratory modified SKAT source.
+- `CODE_PROVENANCE.md`: provenance of the focused weighted-Gaussian extension
+  extracted from the research source.
 - `PUBLISHING.md`: the short sequence for creating and pushing the repository.
 
 ## Relationship to SKAT
 
-The SKAT authors retain ownership of the `SKAT` package. `GausSKAT` calls the
-installed package and relies on its score-test and mixture-distribution
-calculations. The external-kernel construction is tested against the weighted
-Gaussian formula used in the research code; see
+The SKAT authors retain ownership of the `SKAT` package. `GausSKAT` adapts the
+continuous-trait score calculation for the weighted-Gaussian kernel and relies
+on the installed package for null-model and mixture-distribution calculations.
+The kernel construction is tested against the formula used in the research
+code; see
 [`scripts/verify_kernel_equivalence.R`](scripts/verify_kernel_equivalence.R).
 
 ## Citation

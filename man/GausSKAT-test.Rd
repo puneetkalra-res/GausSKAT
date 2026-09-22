@@ -54,8 +54,8 @@ p-values, adaptive grid, endpoint estimates, and diagnostics.
 }
 \description{
 Constructs the phenotype-independent adaptive weighted-Gaussian grid,
-evaluates every component using \pkg{SKAT}, and combines the component
-p-values with ACAT.
+evaluates every component using the continuous-trait weighted-Gaussian SKAT
+score calculation, and combines the component p-values with ACAT.
 }
 \examples{
 \dontrun{

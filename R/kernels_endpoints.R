@@ -24,8 +24,9 @@ weighted_squared_distances <- function(Z, weights) {
   }
 
   weighted_Z <- sweep(Z, 2L, weights, `*`)
-  squared_norm <- rowSums(weighted_Z * weighted_Z)
-  D <- outer(squared_norm, squared_norm, `+`) - 2 * tcrossprod(weighted_Z)
+  # Retain the exact calculation used in revision3W_simulation.R and in the
+  # modified weighted-Gaussian SKAT kernel.
+  D <- as.matrix(stats::dist(weighted_Z, method = "euclidean"))^2
   .validate_distance_matrix(D)
 }
 

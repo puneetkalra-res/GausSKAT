@@ -8,7 +8,7 @@ simulate_gausskat_power(
   n_replications = 100L,
   seed = 7761L,
   haplotypes = NULL,
-  comparison_kernels = c("linear.weighted", "IBS.weighted"),
+  comparison_kernels = c("IBS.weighted", "linear.weighted"),
   method = "davies",
   progress = interactive(),
   fail_fast = TRUE,
@@ -27,7 +27,8 @@ simulate_gausskat_power(
   \pkg{SKAT} is used by default.}
   \item{comparison_kernels}{SKAT kernels evaluated as comparators.}
   \item{method}{SKAT p-value method.}
-  \item{progress}{Whether to print progress updates.}
+  \item{progress}{Whether to display a live progress bar with percentage,
+  elapsed time, and estimated completion time.}
   \item{fail_fast}{Whether the first failed replication stops the run.}
   \item{parallel}{Whether to evaluate the component Gaussian-kernel tests in
   parallel within each replication. Replications remain sequential so the

@@ -396,7 +396,8 @@ gausskat_simulation_config <- function(
 #'   used by default.
 #' @param comparison_kernels SKAT kernels evaluated as comparators.
 #' @param method SKAT p-value method.
-#' @param progress Whether to print progress updates.
+#' @param progress Whether to display a live progress bar with percentage,
+#'   elapsed time, and estimated completion time.
 #' @param fail_fast Whether the first failed replication should stop the run.
 #' @param parallel Whether to evaluate the component Gaussian-kernel tests in
 #'   parallel within each replication. Replications themselves remain
@@ -411,7 +412,7 @@ simulate_gausskat_power <- function(
     n_replications = 100L,
     seed = 7761L,
     haplotypes = NULL,
-    comparison_kernels = c("linear.weighted", "IBS.weighted"),
+    comparison_kernels = c("IBS.weighted", "linear.weighted"),
     method = "davies",
     progress = interactive(),
     fail_fast = TRUE,
@@ -485,6 +486,21 @@ simulate_gausskat_power <- function(
     on.exit(parallel::stopCluster(worker_cluster), add = TRUE)
   }
 
+  progress_bar <- NULL
+  if (isTRUE(progress)) {
+    progress_bar <- progress::progress_bar$new(
+      format = paste0(
+        "[:bar] :percent  Elapsed (h:m:s): :elapsedfull ",
+        "ETA (h:m:s): :eta"
+      ),
+      total = n_replications,
+      clear = FALSE,
+      show_after = 0,
+      force = TRUE
+    )
+    on.exit(progress_bar$terminate(), add = TRUE)
+  }
+
   runs <- vector("list", n_replications)
   for (replication in seq_len(n_replications)) {
     runs[[replication]] <- tryCatch(
@@ -511,11 +527,8 @@ simulate_gausskat_power <- function(
       }
     )
 
-    if (isTRUE(progress) &&
-        (replication == 1L || replication == n_replications ||
-         replication %% max(1L, floor(n_replications / 20L)) == 0L)) {
-      message("Completed ", replication, " of ", n_replications,
-              " replications.")
+    if (!is.null(progress_bar)) {
+      progress_bar$tick()
     }
   }
 

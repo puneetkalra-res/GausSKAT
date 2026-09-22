@@ -47,9 +47,9 @@ test_that("GausSKAT returns a complete five-component result", {
   D <- weighted_squared_distances(Z, fit$weights)
   psock_fits <- GausSKAT:::.evaluate_component_fits(
     ell_grid = fit$ell.grid,
-    D = D,
     Z = Z,
     null_model = null_model,
+    weights = fit$weights,
     method = "davies",
     parallel_plan = list(workers = 2L, backend = "PSOCK")
   )
@@ -59,6 +59,24 @@ test_that("GausSKAT returns a complete five-component result", {
     numeric(1)
   )
   expect_equal(psock_p_values, fit$component.p.values, tolerance = 1e-12)
+
+  reference_p_values <- vapply(fit$ell.grid, function(ell) {
+    reference_kernel <- exp(-D / ell)
+    reference_fit <- SKAT::SKAT(
+      Z = Z,
+      obj = null_model,
+      kernel = reference_kernel,
+      method = "davies",
+      weights = rep(1, ncol(Z)),
+      max_maf = 1
+    )
+    as.numeric(reference_fit$p.value)
+  }, numeric(1))
+  expect_equal(
+    fit$component.p.values,
+    reference_p_values,
+    tolerance = 1e-10
+  )
 })
 
 test_that("binary null models are rejected explicitly", {

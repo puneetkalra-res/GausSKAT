@@ -1,19 +1,3 @@
-.skat_matrix_kernel <- function(Z, null_model, K, method) {
-  fit <- SKAT::SKAT(
-    Z = Z,
-    obj = null_model,
-    kernel = K,
-    method = method,
-    weights = rep(1, ncol(Z)),
-    max_maf = 1
-  )
-
-  if (length(fit$p.value) != 1L || !is.finite(fit$p.value)) {
-    stop("SKAT did not return a finite component p-value.", call. = FALSE)
-  }
-  fit
-}
-
 .resolve_component_parallelism <- function(parallel, n_cores,
                                            number_tasks) {
   if (length(parallel) != 1L || is.na(parallel) || !is.logical(parallel)) {
@@ -73,14 +57,15 @@
   parallel::makeCluster(n_cores, type = "PSOCK", useXDR = FALSE)
 }
 
-.evaluate_component_fits <- function(ell_grid, D, Z, null_model, method,
+.evaluate_component_fits <- function(ell_grid, Z, null_model, weights, method,
                                      parallel_plan,
                                      worker_cluster = NULL) {
   evaluate_one <- function(ell) {
-    .skat_matrix_kernel(
+    .modified_skat_gaussian(
       Z = Z,
       null_model = null_model,
-      K = exp(-D / ell),
+      ell = ell,
+      weights = weights,
       method = method
     )
   }
@@ -107,19 +92,21 @@
 
   parallel::clusterExport(
     worker_cluster,
-    varlist = c("D", "Z", "null_model", "method"),
+    varlist = c("Z", "null_model", "weights", "method"),
     envir = environment()
   )
 
   worker_function <- function(ell) {
-    K <- exp(-D / ell)
-    fit <- SKAT::SKAT(
+    fit_function <- getFromNamespace(
+      ".modified_skat_gaussian",
+      "GausSKAT"
+    )
+    fit <- fit_function(
       Z = Z,
-      obj = null_model,
-      kernel = K,
-      method = method,
-      weights = rep(1, ncol(Z)),
-      max_maf = 1
+      null_model = null_model,
+      ell = ell,
+      weights = weights,
+      method = method
     )
     if (length(fit$p.value) != 1L || !is.finite(fit$p.value)) {
       stop("SKAT did not return a finite component p-value.",
@@ -142,7 +129,8 @@
 #' GausSKAT test for a continuous trait
 #'
 #' Constructs a phenotype-independent, data-adaptive grid of weighted Gaussian
-#' kernels, evaluates each kernel using the official `SKAT` package, and
+#' kernels, evaluates each kernel using the weighted-Gaussian extension of the
+#' continuous-trait SKAT score calculation, and
 #' aggregates the dependent component p-values by ACAT.
 #'
 #' The default per-variant weights are beta-density weights with parameters
@@ -162,7 +150,7 @@
 #' @param epsilon Stabilization tolerance for the practical upper-endpoint
 #'   approximation.
 #' @param number_grid_points Number of logarithmically spaced kernels.
-#' @param method SKAT p-value method passed to [SKAT::SKAT()].
+#' @param method SKAT p-value method.
 #' @param acat_weights Optional ACAT component weights. Equal weights are used
 #'   by default.
 #' @param keep_component_fits Whether to retain the complete SKAT fit for every
@@ -271,9 +259,9 @@ GausSKAT <- function(Z, null_model, X = NULL, weights = NULL,
 
   component_fits <- .evaluate_component_fits(
     ell_grid = grid$ell_grid,
-    D = D,
-    Z = Z,
+    Z = Z_analysis,
     null_model = null_model,
+    weights = weights,
     method = method,
     parallel_plan = parallel_plan,
     worker_cluster = worker_cluster
@@ -302,6 +290,7 @@ GausSKAT <- function(Z, null_model, X = NULL, weights = NULL,
     parallel = parallel_plan$workers > 1L,
     n.cores = parallel_plan$workers,
     parallel.backend = parallel_plan$backend,
+    computation.path = "modified weighted-Gaussian SKAT",
     rank.X = grid$rank_X,
     call = call
   )

@@ -21,6 +21,7 @@ Depends:
     R (>= 4.1.0)
 Imports:
     parallel,
+    progress (>= 1.2.0),
     SKAT (>= 2.2.5),
     stats,
     utils

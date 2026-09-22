@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Verifies that the independent distance implementation reproduces the exact
+# Verifies that the package distance implementation reproduces the exact
 # weighted-Gaussian formula used in the original research code:
 #   weighted_Z <- sweep(Z, 2, weights, "*")
 #   K <- exp(-as.matrix(dist(weighted_Z))^2 / ell)
@@ -22,10 +22,10 @@ reference_kernel <- exp(
 )
 
 D <- weighted_squared_distances(Z, weights)
-independent_kernel <- gausskat_kernel(D, ell)
+package_kernel <- gausskat_kernel(D, ell)
 
 stopifnot(isTRUE(all.equal(
-  independent_kernel,
+  package_kernel,
   reference_kernel,
   tolerance = 1e-12
 )))
