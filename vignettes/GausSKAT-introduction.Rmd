@@ -1,0 +1,39 @@
+---
+title: "Using GausSKAT"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using GausSKAT}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+GausSKAT evaluates a phenotype-independent, data-adaptive grid of weighted
+Gaussian kernels and combines their SKAT p-values with ACAT. The lower endpoint
+is the median strictly positive weighted genetic distance. The practical upper
+endpoint is a first-order approximation based on stabilization of the
+Frobenius-scaled, covariate-adjusted kernel.
+
+```{r example, eval=FALSE}
+library(SKAT)
+library(GausSKAT)
+
+data("SKAT.example", package = "SKAT")
+null_model <- SKAT_Null_Model(
+  y.c ~ X,
+  data = SKAT.example,
+  out_type = "C"
+)
+
+fit <- GausSKAT(SKAT.example$Z, null_model)
+fit$p.value
+fit$component.p.values
+fit$ell.grid
+fit$delta.at.ell.max
+```
+
+The package passes the constructed kernel matrices to the official `SKAT`
+package. It does not alter SKAT's null-model fitting or p-value calculations.
