@@ -18,3 +18,5 @@
   RNG kinds when applying the requested seed.
 - Reported the average number of causal variants as an immediate replication-
   stream diagnostic against `revision3W_simulation.R`.
+- Placed the seed reset immediately before the replication loop so setup of a
+  parallel backend cannot alter the simulated-data stream.

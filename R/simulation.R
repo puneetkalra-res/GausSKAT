@@ -472,12 +472,6 @@ simulate_gausskat_power <- function(
     }
   }, add = TRUE)
 
-  # Match revision3W_simulation.R exactly: retain the active RNG kinds and
-  # seed the current stream. The kinds are recorded in the returned object,
-  # and the caller's complete RNG state is restored on exit.
-  set.seed(seed)
-  manuscript_rng_kind <- RNGkind()
-
   parallel_plan <- .resolve_component_parallelism(
     parallel = parallel,
     n_cores = n_cores,
@@ -503,6 +497,14 @@ simulate_gausskat_power <- function(
     )
     on.exit(progress_bar$terminate(), add = TRUE)
   }
+
+  # Establish the simulation stream only after package, backend, worker, and
+  # progress-bar setup. This makes the generated replications independent of
+  # whether those setup operations happen to touch the RNG in a given R or
+  # operating-system version. The reference manuscript script should use the
+  # same boundary when exact replication-level comparison is required.
+  set.seed(seed)
+  manuscript_rng_kind <- RNGkind()
 
   runs <- vector("list", n_replications)
   for (replication in seq_len(n_replications)) {

@@ -31,10 +31,11 @@ calculation, and cover endpoint construction, weight-scale equivariance, the
 large-hyperparameter weighted-linear limit, ACAT, and the simulation output
 structure.
 
-The default simulation RNG sequence follows `revision3W_simulation.R`, the
-final full-simulation script: the active RNG kinds are retained and the stream
-is seeded once and used continuously across replications. The active RNG kinds
-are recorded with every returned simulation object.
+The simulation retains the active RNG kinds and seeds the stream immediately
+before the replication loop, after backend and worker setup. It then uses that
+stream continuously across replications. The manuscript simulation script must
+use this same seed boundary for exact replication-level comparison. The active
+RNG kinds are recorded with every returned simulation object.
 
 Optional parallel execution is restricted to the deterministic Gaussian-kernel
 component tests within each replication. Simulation replications retain their
