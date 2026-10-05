@@ -6,7 +6,7 @@
 simulate_gausskat_power(
   configuration = gausskat_simulation_config(),
   n_replications = 100L,
-  seed = 7761L,
+  seed = 2569L,
   haplotypes = NULL,
   comparison_kernels = c("IBS.weighted", "linear.weighted"),
   method = "davies",
