@@ -1,5 +1,5 @@
 test_that("the SNP sampler returns the requested consecutive SNP count", {
-  set.seed(7761)
+  set.seed(2569)
   selected <- GausSKAT:::.sample_snps(100L, 40L)
 
   expect_length(selected, 40L)
