@@ -3,11 +3,11 @@
 # Usage:
 #   Rscript scripts/run_power_simulation.R [replications] [seed] [output_file] [cores]
 # Example:
-#   Rscript scripts/run_power_simulation.R 100 7761 results/screening.rds 5
+#   Rscript scripts/run_power_simulation.R 100 2569 results/screening.rds 5
 
 arguments <- commandArgs(trailingOnly = TRUE)
 n_replications <- if (length(arguments) >= 1L) as.integer(arguments[1L]) else 100L
-seed <- if (length(arguments) >= 2L) as.integer(arguments[2L]) else 7761L
+seed <- if (length(arguments) >= 2L) as.integer(arguments[2L]) else 2569L
 output_file <- if (length(arguments) >= 3L) {
   arguments[3L]
 } else {
