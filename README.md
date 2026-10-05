@@ -107,7 +107,7 @@ configuration <- gausskat_simulation_config(
 simulation <- simulate_gausskat_power(
   configuration = configuration,
   n_replications = 100,
-  seed = 7761,
+  seed = 2569,
   parallel = TRUE,
   n_cores = 5,
   progress = TRUE
