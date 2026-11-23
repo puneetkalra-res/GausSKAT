@@ -169,6 +169,13 @@ code; see
 
 ## Citation
 
-Please cite the accompanying GausSKAT manuscript and the original SKAT and
-ACAT publications. Full manuscript citation details can be added to
-`CITATION.cff` when the article DOI is assigned.
+## Citation
+
+If you use GausSKAT, please cite:
+
+Kalra P, Sharma SK. GausSKAT: A Data-Adaptive Weighted Gaussian Kernel
+Procedure for Rare-Variant Association Testing Within the SKAT Framework.
+*Statistics in Medicine*. 2026;45(25–27):e70824.
+https://doi.org/10.1002/sim.70824
+
+Please also cite the original SKAT and ACAT publications.
