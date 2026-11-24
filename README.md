@@ -15,21 +15,21 @@ source tree.
 
 ## Method implemented
 
-For supplied SKAT weights \(w_k\), the weighted squared genetic distance is
+Let $`\sqrt{w_k}=\operatorname{Beta}(\mathrm{MAF}_k;1,25)`$ denote the weight assigned to variant $`k`$. The weighted squared genetic distance is
 
-\[
-D_{ii'}=\sum_k w_k^2(z_{ik}-z_{i'k})^2,
-\]
+```math
+D_{ii'}=\sum_k w_k(z_{ik}-z_{i'k})^2.
+```
 
-and the weighted Gaussian kernel is
+The weighted Gaussian kernel is
 
-\[
-K_{\ell,ii'}=\exp(-D_{ii'}/\ell).
-\]
+```math
+K_{\ell,ii'}=\exp\left(-\frac{D_{ii'}}{\ell}\right).
+```
 
 The implementation then:
 
-1. sets \(\ell_{\min}\) to the median strictly positive weighted distance;
+1. sets $`\ell_{\min}`$ to the median strictly positive weighted distance;
 2. obtains the practical \(\ell_{\max,\mathrm{approx}}\) from the first-order,
    covariate-projected stabilization approximation with tolerance
    \(\varepsilon\);
@@ -40,6 +40,9 @@ The implementation then:
 The returned object reports the actual projected-kernel change at
 \(\ell_{\max,\mathrm{approx}}\), so the approximation is transparent and can
 be checked for every analysis or simulation replication.
+
+The returned object also reports the actual projected-kernel change at
+$\ell_{\max,\mathrm{approx}}$, allowing the approximation to be checked directly.
 
 ## Installation
 
