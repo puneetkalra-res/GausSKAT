@@ -1,21 +1,10 @@
 # GausSKAT
 
-`GausSKAT` implements the data-adaptive weighted Gaussian-kernel sequence
-kernel association test for continuous traits. It constructs a
-phenotype-independent grid of weighted Gaussian kernels, obtains one SKAT
-p-value per kernel, and combines the dependent p-values using the aggregated
-Cauchy association test (ACAT).
+`GausSKAT` implements a data-adaptive rare-variant association procedure within the sequence kernel association test (SKAT) framework for continuous traits.
 
-This repository implements the weighted-Gaussian extension of the
-continuous-trait SKAT calculation used for the manuscript simulations. It
-retains only the required modified pathway and uses the official
-[`SKAT`](https://cran.r-project.org/package=SKAT) package for null-model fitting
-and mixture-distribution calculations; it does not redistribute the full SKAT
-source tree.
+## Method overview
 
-## Method implemented
-
-Let $`\sqrt{w_k}=\operatorname{Beta}(\mathrm{MAF}_k;1,25)`$ denote the weight assigned to variant $`k`$. The weighted squared genetic distance is
+Under the default weighting scheme, let $\sqrt{w_k}=\mathrm{Beta}(\mathrm{MAF}_k;1,25)$ denote the weight assigned to variant $k$. The weighted squared genetic distance is
 
 ```math
 D_{ii'}=\sum_k w_k(z_{ik}-z_{i'k})^2.
@@ -29,37 +18,27 @@ K_{\ell,ii'}=\exp\left(-\frac{D_{ii'}}{\ell}\right).
 
 The implementation then:
 
-1. sets $`\ell_{\min}`$ to the median strictly positive weighted distance;
-2. obtains the practical \(\ell_{\max,\mathrm{approx}}\) from the first-order,
+1. sets $\ell_{\min}$ to the median strictly positive weighted distance;
+2. obtains the practical $\ell_{\max,\mathrm{approx}}$ from the first-order,
    covariate-projected stabilization approximation with tolerance
-   \(\varepsilon\);
-3. constructs `J` logarithmically spaced values between the two endpoints;
+   $\varepsilon$;
+3. constructs $J$ logarithmically spaced values between the two endpoints, with $J=5$ by default;
 4. evaluates each kernel with SKAT; and
-5. combines the component p-values by equal-weight ACAT.
-
-The returned object reports the actual projected-kernel change at
-\(\ell_{\max,\mathrm{approx}}\), so the approximation is transparent and can
-be checked for every analysis or simulation replication.
+5. combines the component p-values using ACAT, with equal weights by default.
 
 The returned object also reports the actual projected-kernel change at
 $\ell_{\max,\mathrm{approx}}$, allowing the approximation to be checked directly.
 
 ## Installation
 
-Install the official dependency and then install this repository:
+Install `GausSKAT` from GitHub:
 
 ```r
-install.packages("SKAT")
 install.packages("remotes")
 remotes::install_github("puneetkalra-res/GausSKAT")
 ```
 
-For a local checkout:
-
-```r
-install.packages("devtools")
-devtools::install(".")
-```
+Required dependencies, including `SKAT`, are installed automatically.
 
 ## Basic analysis
 
@@ -122,55 +101,19 @@ simulation$summary$endpoints
 simulation$results
 ```
 
-`simulation$results` retains every p-value, endpoint, grid point, and endpoint
-diagnostic needed to reproduce detailed supplementary tables. See
-[`scripts/run_power_simulation.R`](scripts/run_power_simulation.R) for a
-command-line example.
+`simulation$results` contains replication-level p-values, endpoints, grid points, and endpoint diagnostics. See [`scripts/run_power_simulation.R`](scripts/run_power_simulation.R) for a command-line example.
 
 ## Reproducibility and scope
 
 - The package currently supports continuous-trait SKAT null models.
-- Genotypes must be complete dosages in `[0, 2]`; perform and document any
-  imputation before calling `GausSKAT()`.
-- The method allocates pairwise distance and kernel matrices and therefore has
-  \(O(n^2)\) memory use.
-- The first-order upper endpoint is labelled `ell.max.approx` throughout the
-  code and output. Its observed doubling-change diagnostic is also returned.
-- Simulation runs retain the active RNG kinds and call `set.seed()` immediately
-  before the replication loop, after backend and worker setup. The seed, RNG
-  settings, and `sessionInfo()` are recorded, and the caller's pre-existing
-  random-number state is restored on exit.
-- Optional component-level parallelism uses forked workers on macOS/Linux and
-  a persistent PSOCK cluster on Windows. Simulation replications remain
-  sequential, and only deterministic kernel tests are parallelised, so the
-  seeded simulation sequence is unchanged.
-- The default `haplotype_sampling = "manuscript"` reproduces the sampling
-  scheme in the research scripts. The alternative `"full_pool"` scheme is
-  available for new experiments and is recorded in the configuration.
-- No Dallas Heart Study participant-level data, intermediate results, or local
-  machine paths are included in this repository.
-
-## Repository layout
-
-- `R/`: method and simulation functions.
-- `tests/testthat/`: numerical, interface, and smoke tests.
-- `scripts/`: executable analysis and reproducibility examples.
-- `vignettes/`: a concise method walkthrough.
-- `.github/workflows/`: automated package checks.
-- `CODE_PROVENANCE.md`: provenance of the focused weighted-Gaussian extension
-  extracted from the research source.
-- `PUBLISHING.md`: the short sequence for creating and pushing the repository.
+- Genotypes must be complete dosages in `[0, 2]`; impute missing values before calling `GausSKAT()`.
+- Pairwise distance and kernel matrices require $O(n^2)$ memory.
+- Simulation outputs record the seed, RNG settings, and `sessionInfo()`; component-level parallelism does not alter the seeded simulation sequence.
+- Dallas Heart Study participant-level data are not included in this repository.
 
 ## Relationship to SKAT
 
-The SKAT authors retain ownership of the `SKAT` package. `GausSKAT` adapts the
-continuous-trait score calculation for the weighted-Gaussian kernel and relies
-on the installed package for null-model and mixture-distribution calculations.
-The kernel construction is tested against the formula used in the research
-code; see
-[`scripts/verify_kernel_equivalence.R`](scripts/verify_kernel_equivalence.R).
-
-## Citation
+This repository adapts the continuous-trait SKAT score calculation for the weighted Gaussian kernel. It retains only the required modified pathway and uses the official [`SKAT`](https://cran.r-project.org/package=SKAT) package for null-model fitting and mixture-distribution calculations.
 
 ## Citation
 
