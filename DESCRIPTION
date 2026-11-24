@@ -1,11 +1,11 @@
 Package: GausSKAT
 Type: Package
-Title: Data-Adaptive Weighted Gaussian-Kernel SKAT
+Title: Data-Adaptive Weighted Gaussian Kernel SKAT
 Version: 0.1.0
 Authors@R: c(
-    person("Puneet", "Kalra", role = "aut"),
-    person("Suresh Kumar", "Sharma", email = "ssharma@pu.ac.in",
-           role = c("aut", "cre"))
+    person("Puneet", "Kalra", email = "puneet.kalra99@gmail.com",
+           role = c("aut", "cre")),
+    person("Suresh Kumar", "Sharma", role = "aut")
   )
 Description: Implements GausSKAT for continuous traits. The method constructs a
     phenotype-independent, data-adaptive grid of weighted Gaussian kernels,
